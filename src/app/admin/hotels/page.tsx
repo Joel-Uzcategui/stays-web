@@ -1,25 +1,56 @@
 import Link from 'next/link';
-import { Pencil, Plus, Power, Search } from 'lucide-react';
+import { Pencil, Plus, Power } from 'lucide-react';
 
-import { getAdminHotels, setHotelActive } from '@/actions';
+import { getAdminHotels, getCityCountries, setHotelActive } from '@/actions';
 import { PageHeader, Pagination, Tag } from '@/components';
 
+import countries from '@/data/countries.json';
+
+import { HotelFilters } from './ui/HotelFilters';
+
+const MIN_TERM = 3;
+
+const countryName = (code: string) =>
+  countries.find((country) => country.code === code)?.name ?? code;
+
 interface Props {
-  searchParams: Promise<{ page?: string; q?: string; active?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    q?: string;
+    country?: string;
+    cityId?: string;
+    city?: string;
+    active?: string;
+  }>;
 }
 
 export default async function AdminHotelsPage({ searchParams }: Props) {
-  const { page: rawPage, q, active: rawActive } = await searchParams;
+  const {
+    page: rawPage,
+    q,
+    country,
+    cityId,
+    city,
+    active: rawActive,
+  } = await searchParams;
 
   const page = Number(rawPage) > 0 ? Number(rawPage) : 1;
   const active = rawActive !== 'false';
+  const term = q && q.trim().length >= MIN_TERM ? q.trim() : undefined;
 
-  const [current, opposite] = await Promise.all([
-    getAdminHotels({ page, q, active }),
-    getAdminHotels({ limit: 1, q, active: !active }),
+  const [current, opposite, available] = await Promise.all([
+    getAdminHotels({ page, q: term, country, cityId, active }),
+    getAdminHotels({ limit: 1, q: term, country, cityId, active: !active }),
+    getCityCountries(),
   ]);
 
   const { data: hotels, meta } = current;
+
+  const filters = {
+    ...(term ? { q: term } : {}),
+    ...(country ? { country } : {}),
+    ...(cityId ? { cityId, city: city ?? '' } : {}),
+  };
 
   const tabs = [
     { label: 'Published', value: 'true', count: active ? meta.total : opposite.meta.total },
@@ -42,23 +73,17 @@ export default async function AdminHotelsPage({ searchParams }: Props) {
       </PageHeader>
 
       <section className="flex flex-col gap-4 px-7 pt-5 pb-10">
-        <div className="flex flex-wrap items-center gap-3">
-          <form className="relative flex items-center">
-            <input type="hidden" name="active" value={String(active)} />
-            <Search
-              size={15}
-              strokeWidth={1.5}
-              className="pointer-events-none absolute left-2.5 text-faint"
-            />
-            <input
-              name="q"
-              defaultValue={q ?? ''}
-              placeholder="Search name, city or country"
-              className="w-68 rounded border border-line bg-white/50 py-1.5 pr-3 pl-8 text-sm placeholder:text-faint"
-            />
-          </form>
+        <div className="flex flex-wrap items-end gap-3">
+          <HotelFilters
+            available={available}
+            active={active}
+            q={q}
+            country={country}
+            cityId={cityId}
+            cityName={city}
+          />
 
-          <div className="flex rounded border border-line p-0.5">
+          <div className="mb-0.5 flex rounded border border-line p-0.5">
             {tabs.map((tab) => {
               const selected = String(active) === tab.value;
 
@@ -67,7 +92,7 @@ export default async function AdminHotelsPage({ searchParams }: Props) {
                   key={tab.value}
                   href={{
                     pathname: '/admin/hotels',
-                    query: { active: tab.value, ...(q ? { q } : {}) },
+                    query: { active: tab.value, ...filters },
                   }}
                   className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors ${
                     selected
@@ -134,7 +159,9 @@ export default async function AdminHotelsPage({ searchParams }: Props) {
                       </td>
                       <td className="px-4 py-3">
                         <p>{hotel.city}</p>
-                        <p className="text-xs text-faint">{hotel.country}</p>
+                        <p className="text-xs text-faint">
+                          {countryName(hotel.country)}
+                        </p>
                       </td>
                       <td className="px-4 py-3">
                         <Tag tone={hotel.active ? 'accent' : 'neutral'}>
@@ -178,7 +205,7 @@ export default async function AdminHotelsPage({ searchParams }: Props) {
             page={meta.page}
             lastPage={meta.lastPage}
             total={meta.total}
-            params={{ active: String(active), ...(q ? { q } : {}) }}
+            params={{ active: String(active), ...filters }}
           />
         </div>
       </section>

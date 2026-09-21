@@ -4,13 +4,20 @@ interface Props {
   page: number;
   lastPage: number;
   total: number;
+  noun?: [string, string];
   params?: Record<string, string>;
 }
 
 const base =
   'rounded border border-line px-2.5 py-1 text-xs transition-colors';
 
-export const Pagination = ({ page, lastPage, total, params = {} }: Props) => {
+export const Pagination = ({
+  page,
+  lastPage,
+  total,
+  noun = ['hotel', 'hotels'],
+  params = {},
+}: Props) => {
   const href = (target: number) =>
     `?${new URLSearchParams({ ...params, page: String(target) })}`;
 
@@ -26,7 +33,7 @@ export const Pagination = ({ page, lastPage, total, params = {} }: Props) => {
   return (
     <div className="flex items-center gap-3 border-t border-line px-4 py-3">
       <p className="text-xs text-muted">
-        {total} {total === 1 ? 'hotel' : 'hotels'}
+        {total} {total === 1 ? noun[0] : noun[1]}
         {lastPage > 1 && ` · page ${page} of ${lastPage}`}
       </p>
 

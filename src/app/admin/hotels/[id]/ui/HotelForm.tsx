@@ -1,22 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { createUpdateHotel } from '@/actions';
-import { Field, fieldClass } from '@/components';
+import { createUpdateHotel, searchAmenities } from '@/actions';
+import {
+  CityCombobox,
+  Field,
+  fieldClass,
+  MultiSelect,
+  type MultiSelectOption,
+} from '@/components';
+import countries from '@/data/countries.json';
 import type { Hotel } from '@/interfaces';
 import { hotelSchema, type HotelInput } from '@/schemas';
 
 import { HotelLocation } from './HotelLocation';
+
+const countryName = (code: string) =>
+  countries.find((country) => country.code === code)?.name;
 
 interface Props {
   hotel?: Hotel;
 }
 
 export const HotelForm = ({ hotel }: Props) => {
+  const [amenities, setAmenities] = useState<MultiSelectOption[]>(
+    hotel?.amenities?.map(({ id, name }) => ({ id, label: name })) ?? [],
+  );
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -34,6 +47,7 @@ export const HotelForm = ({ hotel }: Props) => {
       country: hotel?.country ?? '',
       city: hotel?.city ?? '',
       address: hotel?.address ?? '',
+      amenityIds: hotel?.amenities?.map((amenity) => amenity.id) ?? [],
       latitude: hotel?.latitude ?? '',
       longitude: hotel?.longitude ?? '',
     },
@@ -41,6 +55,16 @@ export const HotelForm = ({ hotel }: Props) => {
 
   const latitude = useWatch({ control, name: 'latitude' });
   const longitude = useWatch({ control, name: 'longitude' });
+  const country = useWatch({ control, name: 'country' });
+  const city = useWatch({ control, name: 'city' });
+
+  const findAmenities = useCallback(
+    async (term: string) =>
+      (await searchAmenities({ q: term || undefined, scope: 'hotel' })).map(
+        ({ id, name }) => ({ id, label: name }),
+      ),
+    [],
+  );
 
   const onSubmit = (data: HotelInput) => {
     setServerError(null);
@@ -69,21 +93,33 @@ export const HotelForm = ({ hotel }: Props) => {
           />
         </Field>
 
-        <Field label="City" error={errors.city?.message}>
-          <input
-            {...register('city')}
-            placeholder="Madrid"
-            className={fieldClass(!!errors.city)}
-          />
+        <Field label="Country" error={errors.country?.message}>
+          <select
+            {...register('country', {
+              onChange: () => setValue('city', '', { shouldValidate: false }),
+            })}
+            className={fieldClass(!!errors.country)}
+          >
+            <option value="">Select a country</option>
+            {countries.map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
         </Field>
 
-        <Field label="Country" error={errors.country?.message}>
-          <input
-            {...register('country')}
-            placeholder="ES"
-            className={fieldClass(!!errors.country)}
-          />
-        </Field>
+        <CityCombobox
+          label="City"
+          value={city}
+          country={country || undefined}
+          countryLabel={countryName(country)}
+          allowCreate
+          error={errors.city?.message}
+          onChange={({ name }) =>
+            setValue('city', name, { shouldValidate: !!errors.city })
+          }
+        />
 
         <Field label="Address" error={errors.address?.message} span>
           <input
@@ -105,6 +141,22 @@ export const HotelForm = ({ hotel }: Props) => {
             setValue('longitude', longitude, { shouldValidate: true });
           }}
         />
+
+        <div className="sm:col-span-2">
+          <MultiSelect
+            label="Amenities"
+            selected={amenities}
+            onChange={(options) => {
+              setAmenities(options);
+              setValue(
+                'amenityIds',
+                options.map((option) => option.id),
+              );
+            }}
+            search={findAmenities}
+            placeholder="Search and select amenities"
+          />
+        </div>
 
         <Field label="Description" error={errors.description?.message} span>
           <textarea

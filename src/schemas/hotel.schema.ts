@@ -22,11 +22,7 @@ export const hotelSchema = z
       .string()
       .trim()
       .max(4000, 'Description must be at most 4000 characters'),
-    country: z
-      .string()
-      .trim()
-      .min(2, 'Country must be at least 2 characters')
-      .max(80, 'Country must be at most 80 characters'),
+    country: z.string().trim().length(2, 'Pick a country'),
     city: z
       .string()
       .trim()
@@ -37,6 +33,7 @@ export const hotelSchema = z
       .trim()
       .min(4, 'Address must be at least 4 characters')
       .max(240, 'Address must be at most 240 characters'),
+    amenityIds: z.array(z.uuid()),
     latitude: coordinate(90, 'Latitude'),
     longitude: coordinate(180, 'Longitude'),
   })

@@ -7,6 +7,8 @@ interface Options {
   page?: number;
   limit?: number;
   q?: string;
+  country?: string;
+  cityId?: string;
   active?: boolean;
 }
 
@@ -14,6 +16,8 @@ export const getAdminHotels = async ({
   page = 1,
   limit = 10,
   q,
+  country,
+  cityId,
   active = true,
 }: Options = {}): Promise<Paginated<Hotel>> => {
   const params = new URLSearchParams({
@@ -24,6 +28,14 @@ export const getAdminHotels = async ({
 
   if (q) {
     params.set('q', q);
+  }
+
+  if (country) {
+    params.set('country', country);
+  }
+
+  if (cityId) {
+    params.set('cityId', cityId);
   }
 
   const response = await authFetch(`/admin/hotels?${params}`);

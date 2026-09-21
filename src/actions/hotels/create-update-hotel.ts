@@ -36,6 +36,7 @@ export const createUpdateHotel = async (
       description: hotel.description,
       latitude: optionalNumber(hotel.latitude),
       longitude: optionalNumber(hotel.longitude),
+      amenityIds: hotel.amenityIds,
     }),
   }).catch(() => null);
 

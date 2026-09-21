@@ -2,7 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Hotel, LayoutDashboard, type LucideIcon } from 'lucide-react';
+import {
+  BedDouble,
+  Hotel,
+  Sparkles,
+  LayoutDashboard,
+  type LucideIcon,
+} from 'lucide-react';
 
 interface Item {
   label: string;
@@ -22,7 +28,11 @@ const groups: Group[] = [
   },
   {
     title: 'Catalog',
-    items: [{ label: 'Hotels', href: '/admin/hotels', icon: Hotel }],
+    items: [
+      { label: 'Hotels', href: '/admin/hotels', icon: Hotel },
+      { label: 'Room types', href: '/admin/room-types', icon: BedDouble },
+      { label: 'Amenities', href: '/admin/amenities', icon: Sparkles },
+    ],
   },
 ];
 
