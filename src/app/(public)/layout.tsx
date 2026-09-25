@@ -1,4 +1,4 @@
-import { TopMenu } from '@/components';
+import { Footer, TopMenu } from '@/components';
 
 export default function PublicLayout({
   children,
@@ -9,6 +9,7 @@ export default function PublicLayout({
     <div className="flex min-h-screen flex-col">
       <TopMenu />
       {children}
+      <Footer />
     </div>
   );
 }
