@@ -27,3 +27,8 @@ export * from './amenities/get-public-amenities';
 export * from './amenities/get-hotel-amenities';
 
 export * from './search/search-hotels';
+
+export * from './bookings/check-availability';
+export * from './bookings/create-booking';
+export * from './bookings/get-my-bookings';
+export * from './bookings/cancel-booking';

@@ -12,5 +12,6 @@ export * from './ui/search-map/SearchMap';
 export * from './ui/sidebar/AdminSidebar';
 export * from './ui/static-map/StaticMap';
 export * from './ui/stat-card/StatCard';
+export * from './ui/stepper/Stepper';
 export * from './ui/tag/Tag';
 export * from './ui/top-menu/TopMenu';

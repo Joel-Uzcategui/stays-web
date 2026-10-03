@@ -17,6 +17,12 @@ export const Footer = () => {
           <Link href="/search" className="transition-colors hover:text-accent">
             Search
           </Link>
+          <Link
+            href="/me/bookings"
+            className="transition-colors hover:text-accent"
+          >
+            Bookings
+          </Link>
         </nav>
 
         <p className="ml-auto text-xs text-faint">

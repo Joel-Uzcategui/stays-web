@@ -6,6 +6,8 @@ import { getHotel, getHotelAmenities, getHotelRoomTypes } from '@/actions';
 import { StaticMap, Tag } from '@/components';
 import countries from '@/data/countries.json';
 
+import { BookingPanel } from './ui/BookingPanel';
+
 const countryName = (code: string) =>
   countries.find((country) => country.code === code)?.name ?? code;
 
@@ -129,6 +131,8 @@ export default async function HotelDetailPage({ params }: Props) {
         </div>
 
         <aside className="flex flex-col gap-8">
+          <BookingPanel hotelId={hotel.id} />
+
           {coords && (
             <section>
               <h2 className="kicker mb-2 text-muted">Location</h2>
