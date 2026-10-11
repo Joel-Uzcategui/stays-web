@@ -7,6 +7,7 @@ import {
   decodeAccessToken,
   isExpired,
   requestRefresh,
+  type AccessTokenPayload,
   type Tokens,
 } from '@/lib/session';
 
@@ -43,14 +44,23 @@ const allow = (request: NextRequest, tokens?: Tokens) => {
   return response;
 };
 
+const forbidden = (
+  request: NextRequest,
+  payload: AccessTokenPayload | null,
+) => {
+  const adminArea = request.nextUrl.pathname.startsWith('/admin');
+
+  return adminArea && payload?.role !== 'admin';
+};
+
 export async function proxy(request: NextRequest) {
   const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
   const payload = accessToken ? decodeAccessToken(accessToken) : null;
 
   if (payload && !isExpired(payload)) {
-    return payload.role === 'admin'
-      ? allow(request)
-      : NextResponse.redirect(new URL('/', request.url));
+    return forbidden(request, payload)
+      ? NextResponse.redirect(new URL('/', request.url))
+      : allow(request);
   }
 
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
@@ -67,7 +77,7 @@ export async function proxy(request: NextRequest) {
 
   const refreshed = decodeAccessToken(tokens.accessToken);
 
-  if (refreshed?.role !== 'admin') {
+  if (forbidden(request, refreshed)) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
@@ -75,5 +85,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/me/:path*', '/bookings/:path*'],
 };

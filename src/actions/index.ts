@@ -32,3 +32,8 @@ export * from './bookings/check-availability';
 export * from './bookings/create-booking';
 export * from './bookings/get-my-bookings';
 export * from './bookings/cancel-booking';
+export * from './bookings/get-booking';
+
+export * from './payments/create-payment-intent';
+export * from './payments/get-booking-payment';
+export * from './bookings/get-booking-status';

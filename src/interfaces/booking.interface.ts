@@ -11,6 +11,8 @@ export interface RoomAvailability {
   totalPrice: number;
 }
 
+export type BookingGroup = 'active' | 'past' | 'cancelled';
+
 export type BookingStatus =
   | 'held'
   | 'confirmed'
@@ -30,4 +32,5 @@ export interface Booking {
   totalCents: number;
   currency: string;
   expiresAt: string | null;
+  refundableUntil: string | null;
 }

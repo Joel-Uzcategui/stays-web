@@ -166,11 +166,15 @@ export const BookingPanel = ({ hotelId }: Props) => {
               : `${booking.units} rooms held for you`}
           </p>
           <p className="mt-1 text-muted">
-            {money(booking.totalCents, booking.currency)} ·{' '}
-            <Link href="/me/bookings" className="text-accent underline">
-              See your bookings
-            </Link>
+            {money(booking.totalCents, booking.currency)} · pay within 15
+            minutes or the hold is released
           </p>
+          <Link
+            href={`/bookings/${booking.bookingId}/pay`}
+            className="mt-2 inline-block rounded bg-accent px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Pay now
+          </Link>
         </div>
       )}
 

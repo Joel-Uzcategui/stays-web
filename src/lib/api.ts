@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+
 import { getAccessToken } from './session-store';
 
 export const apiFetch = (path: string, init: RequestInit = {}) =>
@@ -13,6 +15,12 @@ export const authFetch = async (path: string, init: RequestInit = {}) => {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
+};
+
+export const requireSession = (response: Response) => {
+  if (response.status === 401) {
+    redirect('/auth/login');
+  }
 };
 
 export const errorMessage = async (response: Response, fallback: string) => {

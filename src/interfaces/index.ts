@@ -5,3 +5,4 @@ export * from './paginated.interface';
 export * from './room-type.interface';
 export * from './search.interface';
 export * from './booking.interface';
+export * from './payment.interface';

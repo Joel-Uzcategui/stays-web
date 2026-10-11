@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { getMyBookings } from '@/actions';
 import { Pagination } from '@/components';
+import type { Booking, BookingGroup } from '@/interfaces';
 import { getCurrentUser } from '@/lib/session-store';
 
 import { CancelButton } from './ui/CancelButton';
@@ -23,8 +24,30 @@ const tone: Record<string, string> = {
   refunded: 'border-line text-muted',
 };
 
+const tabs: { group: BookingGroup; label: string; empty: string }[] = [
+  { group: 'active', label: 'Active', empty: 'You have no upcoming stays.' },
+  { group: 'past', label: 'Past', empty: 'You have no past stays yet.' },
+  {
+    group: 'cancelled',
+    label: 'Cancelled',
+    empty: 'You have not cancelled any booking.',
+  },
+];
+
+const cancellable = (booking: Booking) => {
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    booking.status === 'held' ||
+    (booking.status === 'confirmed' && booking.checkIn > today)
+  );
+};
+
+const isGroup = (value?: string): value is BookingGroup =>
+  tabs.some((tab) => tab.group === value);
+
 interface Props {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; group?: string }>;
 }
 
 export default async function MyBookingsPage({ searchParams }: Props) {
@@ -34,17 +57,37 @@ export default async function MyBookingsPage({ searchParams }: Props) {
     redirect('/auth/login');
   }
 
-  const { page } = await searchParams;
-  const { data, meta } = await getMyBookings(Number(page) || 1);
+  const { page, group } = await searchParams;
+  const current = isGroup(group) ? group : 'active';
+  const active = tabs.find((tab) => tab.group === current) ?? tabs[0];
+
+  const { data, meta } = await getMyBookings(Number(page) || 1, 10, current);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-10">
       <p className="kicker text-accent">Your stays</p>
       <h1 className="mt-1 text-4xl">Bookings</h1>
 
+      <nav className="mt-6 flex gap-1 border-b border-line">
+        {tabs.map((tab) => (
+          <Link
+            key={tab.group}
+            href={`?group=${tab.group}`}
+            aria-current={tab.group === current ? 'page' : undefined}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${
+              tab.group === current
+                ? 'border-accent font-medium text-accent-ink'
+                : 'border-transparent text-muted hover:text-accent'
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </nav>
+
       {data.length === 0 ? (
         <div className="mt-8 rounded border border-line px-4 py-16 text-center">
-          <p className="text-muted">You have no bookings yet.</p>
+          <p className="text-muted">{active.empty}</p>
           <Link
             href="/search"
             className="mt-2 inline-block text-sm text-accent underline"
@@ -53,7 +96,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
           </Link>
         </div>
       ) : (
-        <div className="mt-8 rounded border border-line">
+        <div className="mt-6 rounded border border-line">
           <ul className="divide-y divide-line">
             {data.map((booking) => (
               <li
@@ -62,7 +105,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
               >
                 <div className="min-w-0 flex-1">
                   <Link
-                    href={`/hotels/${booking.hotelId}`}
+                    href={`/bookings/${booking.bookingId}`}
                     className="font-heading text-lg leading-tight transition-colors hover:text-accent"
                   >
                     {booking.checkIn} → {booking.checkOut}
@@ -79,8 +122,16 @@ export default async function MyBookingsPage({ searchParams }: Props) {
                   {booking.status}
                 </span>
 
-                {(booking.status === 'held' ||
-                  booking.status === 'confirmed') && (
+                {booking.status === 'held' && (
+                  <Link
+                    href={`/bookings/${booking.bookingId}/pay`}
+                    className="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                  >
+                    Pay
+                  </Link>
+                )}
+
+                {cancellable(booking) && (
                   <CancelButton bookingId={booking.bookingId} />
                 )}
               </li>
@@ -92,6 +143,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
             lastPage={meta.lastPage}
             total={meta.total}
             noun={['booking', 'bookings']}
+            params={{ group: current }}
           />
         </div>
       )}
