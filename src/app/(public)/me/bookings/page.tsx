@@ -2,11 +2,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { getMyBookings } from '@/actions';
-import { Pagination } from '@/components';
-import type { Booking, BookingGroup } from '@/interfaces';
+import { CancelButton, Pagination } from '@/components';
+import type { BookingGroup } from '@/interfaces';
+import { isCancellable } from '@/lib/bookings';
 import { getCurrentUser } from '@/lib/session-store';
-
-import { CancelButton } from './ui/CancelButton';
 
 const money = (cents: number, currency: string) =>
   new Intl.NumberFormat('en-GB', {
@@ -33,15 +32,6 @@ const tabs: { group: BookingGroup; label: string; empty: string }[] = [
     empty: 'You have not cancelled any booking.',
   },
 ];
-
-const cancellable = (booking: Booking) => {
-  const today = new Date().toISOString().slice(0, 10);
-
-  return (
-    booking.status === 'held' ||
-    (booking.status === 'confirmed' && booking.checkIn > today)
-  );
-};
 
 const isGroup = (value?: string): value is BookingGroup =>
   tabs.some((tab) => tab.group === value);
@@ -131,7 +121,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
                   </Link>
                 )}
 
-                {cancellable(booking) && (
+                {isCancellable(booking) && (
                   <CancelButton bookingId={booking.bookingId} />
                 )}
               </li>

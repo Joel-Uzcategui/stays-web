@@ -1,3 +1,5 @@
+export * from './bookings/cancel-button/CancelButton';
+
 export * from './hotels/hotel-card/HotelCard';
 export * from './hotels/hotel-grid/HotelGrid';
 export * from './hotels/hotel-grid/HotelGridItem';

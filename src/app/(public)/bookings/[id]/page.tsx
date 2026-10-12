@@ -3,7 +3,9 @@ import { notFound, redirect } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
 
 import { getBooking, getBookingPayment, getHotel } from '@/actions';
+import { CancelButton } from '@/components';
 import type { Booking } from '@/interfaces';
+import { isCancellable } from '@/lib/bookings';
 import { getCurrentUser } from '@/lib/session-store';
 
 const money = (cents: number, currency: string) =>
@@ -143,14 +145,20 @@ export default async function BookingPage({ params }: Props) {
         </div>
       )}
 
-      {booking.status === 'held' && (
-        <Link
-          href={`/bookings/${booking.bookingId}/pay`}
-          className="mt-6 inline-block rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
-        >
-          Pay now
-        </Link>
-      )}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        {booking.status === 'held' && (
+          <Link
+            href={`/bookings/${booking.bookingId}/pay`}
+            className="rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Pay now
+          </Link>
+        )}
+
+        {isCancellable(booking) && (
+          <CancelButton bookingId={booking.bookingId} />
+        )}
+      </div>
     </main>
   );
 }

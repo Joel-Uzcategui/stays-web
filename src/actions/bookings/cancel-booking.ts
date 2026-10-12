@@ -17,6 +17,7 @@ export const cancelBooking = async (id: string) => {
   }
 
   revalidatePath('/me/bookings');
+  revalidatePath(`/bookings/${id}`);
 
   return { ok: true as const };
 };
