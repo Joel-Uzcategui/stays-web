@@ -1,5 +1,6 @@
 export * from './auth/login';
 export * from './auth/logout';
+export * from './auth/register';
 
 export * from './cities/search-cities';
 export * from './cities/get-city-countries';

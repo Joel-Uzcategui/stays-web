@@ -4,6 +4,7 @@ export * from './hotels/hotel-card/HotelCard';
 export * from './hotels/hotel-grid/HotelGrid';
 export * from './hotels/hotel-grid/HotelGridItem';
 
+export * from './ui/brand/Brand';
 export * from './ui/city-combobox/CityCombobox';
 export * from './ui/field/Field';
 export * from './ui/footer/Footer';

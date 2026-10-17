@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { login } from '@/actions';
-import { Field, fieldClass } from '@/components';
-import { loginSchema, type LoginInput } from '@/schemas';
+import { login } from "@/actions";
+import { Field, fieldClass } from "@/components";
+import { loginSchema, type LoginInput } from "@/schemas";
 
 interface Props {
   redirectTo: string;
@@ -22,7 +22,7 @@ export const LoginForm = ({ redirectTo }: Props) => {
     formState: { errors },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: "", password: "" },
   });
 
   const onSubmit = (data: LoginInput) => {
@@ -45,7 +45,7 @@ export const LoginForm = ({ redirectTo }: Props) => {
     >
       <Field label="Email" error={errors.email?.message}>
         <input
-          {...register('email')}
+          {...register("email")}
           type="email"
           autoComplete="email"
           placeholder="admin@stays.local"
@@ -55,7 +55,7 @@ export const LoginForm = ({ redirectTo }: Props) => {
 
       <Field label="Password" error={errors.password?.message}>
         <input
-          {...register('password')}
+          {...register("password")}
           type="password"
           autoComplete="current-password"
           className={fieldClass(!!errors.password)}
@@ -73,7 +73,7 @@ export const LoginForm = ({ redirectTo }: Props) => {
         disabled={pending}
         className="mt-1 rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-deep disabled:opacity-45"
       >
-        {pending ? 'Signing in…' : 'Sign in'}
+        {pending ? "Signing in…" : "Sign in"}
       </button>
     </form>
   );

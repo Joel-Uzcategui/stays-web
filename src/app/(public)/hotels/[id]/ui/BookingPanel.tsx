@@ -7,7 +7,7 @@ import { CalendarCheck, Users } from "lucide-react";
 import { checkAvailability, createBooking } from "@/actions";
 import { Stepper } from "@/components";
 import type { Booking, RoomAvailability } from "@/interfaces";
-import { addDays, today } from "@/lib/dates";
+import { addDays, nightsBetween, today } from "@/lib/dates";
 
 const MAX_ROOMS = 10;
 
@@ -21,26 +21,52 @@ const money = (cents: number, currency: string) =>
 const field =
   "w-full rounded border border-line bg-white/50 px-2.5 py-2 text-sm outline-none focus:border-accent";
 
-interface Props {
-  hotelId: string;
-  stay?: { checkIn: string; checkOut: string; guests: number };
+const day = (value: string) =>
+  new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(
+    new Date(`${value}T00:00:00.000Z`),
+  );
+
+const plural = (count: number, noun: string) =>
+  `${count} ${count === 1 ? noun : `${noun}s`}`;
+
+interface Stay {
+  checkIn: string;
+  checkOut: string;
+  guests: number;
 }
 
-export const BookingPanel = ({ hotelId, stay }: Props) => {
-  const [checkIn, setCheckIn] = useState(stay?.checkIn ?? addDays(today(), 14));
-  const [checkOut, setCheckOut] = useState(
-    stay?.checkOut ?? addDays(today(), 16),
-  );
-  const [rooms, setRooms] = useState(1);
-  const [guests, setGuests] = useState(stay?.guests ?? 2);
+interface Props {
+  hotelId: string;
+  stay: Stay;
+  initialRooms: RoomAvailability[];
+}
 
-  const [results, setResults] = useState<RoomAvailability[] | null>(null);
+export const BookingPanel = ({ hotelId, stay, initialRooms }: Props) => {
+  const [checkIn, setCheckIn] = useState(stay.checkIn);
+  const [checkOut, setCheckOut] = useState(stay.checkOut);
+  const [rooms, setRooms] = useState(1);
+  const [guests, setGuests] = useState(stay.guests);
+
+  const [results, setResults] = useState<RoomAvailability[]>(initialRooms);
+  const [applied, setApplied] = useState({ ...stay, rooms: 1 });
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [needsLogin, setNeedsLogin] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const query = { hotelId, checkIn, checkOut, rooms, guests };
+
+  const stale =
+    applied.checkIn !== checkIn ||
+    applied.checkOut !== checkOut ||
+    applied.rooms !== rooms ||
+    applied.guests !== guests;
+
+  const resumeAt = `/hotels/${hotelId}?${new URLSearchParams({
+    checkIn,
+    checkOut,
+    guests: String(guests),
+  })}`;
 
   const setRoomCount = (value: number) => {
     setRooms(value);
@@ -58,6 +84,7 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
 
     startTransition(async () => {
       setResults(await checkAvailability(query));
+      setApplied({ checkIn, checkOut, rooms, guests });
     });
   };
 
@@ -76,6 +103,7 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
       if (result.ok) {
         setBooking(result.booking);
         setResults(await checkAvailability(query));
+        setApplied({ checkIn, checkOut, rooms, guests });
         return;
       }
 
@@ -85,10 +113,8 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
   };
 
   return (
-    <section className="rounded border border-line p-4">
-      <h2 className="kicker text-muted">Check availability</h2>
-
-      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+    <section>
+      <div className="flex flex-wrap items-end gap-3 rounded border border-line p-3">
         <label className="flex flex-col gap-1">
           <span className="text-xs text-faint">Check-in</span>
           <input
@@ -110,33 +136,36 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
             className={field}
           />
         </label>
-      </div>
 
-      <div className="mt-3 flex flex-col gap-2.5 rounded border border-line px-3 py-2.5">
-        <Stepper
-          label="Rooms"
-          value={rooms}
-          max={MAX_ROOMS}
-          onChange={setRoomCount}
-        />
-        <Stepper
-          label="Guests"
-          hint={rooms > 1 ? `Across ${rooms} rooms` : undefined}
-          value={guests}
-          min={rooms}
-          max={rooms * 20}
-          onChange={setGuests}
-        />
-      </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-5">
+          <Stepper
+            label="Rooms"
+            value={rooms}
+            max={MAX_ROOMS}
+            onChange={setRoomCount}
+          />
+          <Stepper
+            label="Guests"
+            value={guests}
+            min={rooms}
+            max={rooms * 20}
+            onChange={setGuests}
+          />
+        </div>
 
-      <button
-        type="button"
-        onClick={search}
-        disabled={pending}
-        className="mt-3 w-full rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-      >
-        {pending ? "Checking…" : "Check availability"}
-      </button>
+        <button
+          type="button"
+          onClick={search}
+          disabled={pending}
+          className={`ml-auto rounded px-4 py-2 text-sm font-medium transition-opacity disabled:opacity-50 ${
+            stale
+              ? "bg-accent text-white hover:opacity-90"
+              : "border border-line text-muted hover:text-accent"
+          }`}
+        >
+          {pending ? "Updating…" : "Update"}
+        </button>
+      </div>
 
       {error && (
         <p className="mt-3 rounded border border-line bg-white/50 px-3 py-2 text-sm text-muted">
@@ -144,7 +173,10 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
           {needsLogin && (
             <>
               {" "}
-              <Link href="/auth/login" className="text-accent underline">
+              <Link
+                href={`/auth/login?redirectTo=${encodeURIComponent(resumeAt)}`}
+                className="text-accent underline"
+              >
                 Sign in
               </Link>
             </>
@@ -173,63 +205,79 @@ export const BookingPanel = ({ hotelId, stay }: Props) => {
         </div>
       )}
 
-      {results !== null && (
-        <ul className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
-          {results.length === 0 && (
-            <li className="text-sm text-faint">
-              No room type fits {guests} {guests === 1 ? "guest" : "guests"} in{" "}
-              {rooms} {rooms === 1 ? "room" : "rooms"} on those dates.
-            </li>
-          )}
+      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <h2 className="kicker text-muted">
+          Rooms {results.length > 0 && `(${results.length})`}
+        </h2>
 
-          {results.map((room) => {
-            const enough = room.unitsLeft >= room.rooms;
+        <p className="text-sm text-faint">
+          {day(applied.checkIn)} – {day(applied.checkOut)} ·{" "}
+          {plural(nightsBetween(applied.checkIn, applied.checkOut), "night")} ·{" "}
+          {plural(applied.rooms, "room")} · {plural(applied.guests, "guest")}
+        </p>
+      </div>
 
-            return (
-              <li
-                key={room.roomTypeId}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded border border-line px-3 py-2.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="font-heading leading-tight">
-                    {room.rooms > 1 && `${room.rooms} × `}
-                    {room.name}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-2 text-xs text-faint">
-                    <span className="flex items-center gap-1">
-                      <Users size={11} strokeWidth={1.5} />
-                      sleeps {room.sleeps}
-                    </span>
-                    <span>
-                      {enough
-                        ? `${room.unitsLeft} left`
-                        : room.unitsLeft === 0
-                          ? "Sold out"
-                          : `only ${room.unitsLeft} left`}
-                    </span>
-                  </p>
-                </div>
-
-                <span className="font-heading text-lg text-accent-ink">
-                  {money(room.totalPrice, room.currency)}
-                  <span className="ml-1 text-xs font-normal text-faint">
-                    / {room.nights} {room.nights === 1 ? "night" : "nights"}
-                  </span>
-                </span>
-
-                <button
-                  type="button"
-                  disabled={!enough || pending}
-                  onClick={() => reserve(room.roomTypeId)}
-                  className="rounded border border-accent px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-accent"
-                >
-                  Reserve
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {stale && (
+        <p className="mt-3 rounded border border-accent bg-accent-tint px-3 py-2 text-sm text-accent-ink">
+          Your search changed. Press Update to see rooms for the new dates.
+        </p>
       )}
+
+      <ul className="mt-3 flex flex-col gap-2">
+        {results.length === 0 && (
+          <li className="rounded border border-line px-4 py-10 text-center text-sm text-faint">
+            No room type fits {guests} {guests === 1 ? "guest" : "guests"} in{" "}
+            {rooms} {rooms === 1 ? "room" : "rooms"} on those dates.
+          </li>
+        )}
+
+        {results.map((room) => {
+          const enough = room.unitsLeft >= room.rooms;
+
+          return (
+            <li
+              key={room.roomTypeId}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded border border-line px-3 py-2.5"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-heading leading-tight">
+                  {room.rooms > 1 && `${room.rooms} × `}
+                  {room.name}
+                </p>
+                <p className="mt-0.5 flex items-center gap-2 text-xs text-faint">
+                  <span className="flex items-center gap-1">
+                    <Users size={11} strokeWidth={1.5} />
+                    sleeps {room.sleeps}
+                  </span>
+                  <span>
+                    {enough
+                      ? `${room.unitsLeft} left`
+                      : room.unitsLeft === 0
+                        ? "Sold out"
+                        : `only ${room.unitsLeft} left`}
+                  </span>
+                </p>
+              </div>
+
+              <span className="font-heading text-lg text-accent-ink">
+                {money(room.totalPrice, room.currency)}
+                <span className="ml-1 text-xs font-normal text-faint">
+                  / {room.nights} {room.nights === 1 ? "night" : "nights"}
+                </span>
+              </span>
+
+              <button
+                type="button"
+                disabled={!enough || pending}
+                onClick={() => reserve(room.roomTypeId)}
+                className="rounded border border-accent px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-accent"
+              >
+                Reserve
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 };

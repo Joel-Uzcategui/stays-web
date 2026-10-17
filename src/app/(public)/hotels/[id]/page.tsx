@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Users } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 
-import { getHotel, getHotelAmenities, getHotelRoomTypes } from "@/actions";
+import {
+  checkAvailability,
+  getHotel,
+  getHotelAmenities,
+  getHotelRoomTypes,
+} from "@/actions";
 import { StaticMap, Tag } from "@/components";
 import countries from "@/data/countries.json";
-import { isDay } from "@/lib/dates";
+import { addDays, isDay, today } from "@/lib/dates";
 
 import { BookingPanel } from "./ui/BookingPanel";
 
@@ -21,12 +26,17 @@ const money = (cents: number, currency: string) =>
 
 const requestedStay = (params: Record<string, string | undefined>) => {
   const { checkIn, checkOut, guests } = params;
+  const chosen = Math.min(Number(guests) || 2, 10);
 
   if (!isDay(checkIn) || !isDay(checkOut) || checkOut <= checkIn) {
-    return undefined;
+    return {
+      checkIn: addDays(today(), 14),
+      checkOut: addDays(today(), 16),
+      guests: chosen,
+    };
   }
 
-  return { checkIn, checkOut, guests: Math.min(Number(guests) || 2, 10) };
+  return { checkIn, checkOut, guests: chosen };
 };
 
 interface Props {
@@ -43,9 +53,10 @@ export default async function HotelDetailPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const [roomTypes, amenities] = await Promise.all([
+  const [roomTypes, amenities, availableRooms] = await Promise.all([
     getHotelRoomTypes(id),
     getHotelAmenities(id),
+    checkAvailability({ hotelId: id, ...stay, rooms: 1 }),
   ]);
 
   const coords =
@@ -94,7 +105,7 @@ export default async function HotelDetailPage({ params, searchParams }: Props) {
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0">
           {hotel.description && (
-            <section>
+            <section className="mb-8">
               <h2 className="kicker text-muted">About</h2>
               <p className="mt-2 leading-relaxed text-muted">
                 {hotel.description}
@@ -102,54 +113,14 @@ export default async function HotelDetailPage({ params, searchParams }: Props) {
             </section>
           )}
 
-          <section className="mt-9">
-            <h2 className="kicker text-muted">
-              Rooms {roomTypes.length > 0 && `(${roomTypes.length})`}
-            </h2>
-
-            {roomTypes.length === 0 ? (
-              <p className="mt-2 text-sm text-faint">
-                No rooms available right now.
-              </p>
-            ) : (
-              <ul className="mt-3 flex flex-col gap-3">
-                {roomTypes.map((room) => (
-                  <li
-                    key={room.id}
-                    className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded border border-line px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-heading text-lg leading-tight">
-                        {room.name}
-                      </h3>
-                      {room.description && (
-                        <p className="mt-0.5 text-sm text-muted">
-                          {room.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <span className="flex items-center gap-1 text-xs text-faint">
-                      <Users size={12} strokeWidth={1.5} />
-                      {room.capacity}
-                    </span>
-
-                    <span className="font-heading text-xl text-accent-ink">
-                      {money(room.priceCents, room.currency)}
-                      <span className="ml-1 text-xs font-normal text-faint">
-                        / night
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <BookingPanel
+            hotelId={hotel.id}
+            stay={stay}
+            initialRooms={availableRooms}
+          />
         </div>
 
         <aside className="flex flex-col gap-8">
-          <BookingPanel hotelId={hotel.id} stay={stay} />
-
           {coords && (
             <section>
               <h2 className="kicker mb-2 text-muted">Location</h2>
