@@ -3,11 +3,26 @@ import { Suspense } from "react";
 import { getCountries, getPublicAmenities, searchHotels } from "@/actions";
 import { HotelCard, Pagination } from "@/components";
 import type { SearchQuery } from "@/interfaces";
+import { isDay } from "@/lib/dates";
 
 import { SearchFilters } from "./ui/SearchFilters";
 
 const number = (value?: string) =>
   value === undefined || value === "" ? undefined : Number(value);
+
+const stayOf = (params: Record<string, string | undefined>) => {
+  const { checkIn, checkOut, guests } = params;
+
+  if (!isDay(checkIn) || !isDay(checkOut) || checkOut <= checkIn) {
+    return undefined;
+  }
+
+  return new URLSearchParams({
+    checkIn,
+    checkOut,
+    guests: String(Number(guests) || 2),
+  }).toString();
+};
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -15,6 +30,7 @@ interface Props {
 
 export default async function SearchPage({ searchParams }: Props) {
   const params = await searchParams;
+  const stay = stayOf(params);
 
   const query: SearchQuery = {
     q: params.q,
@@ -67,7 +83,7 @@ export default async function SearchPage({ searchParams }: Props) {
             <>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {hotels.map((hotel) => (
-                  <HotelCard key={hotel.id} hotel={hotel} />
+                  <HotelCard key={hotel.id} hotel={hotel} stay={stay} />
                 ))}
               </div>
 

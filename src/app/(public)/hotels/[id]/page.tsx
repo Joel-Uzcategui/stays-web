@@ -1,29 +1,42 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { ArrowLeft, MapPin, Users } from 'lucide-react';
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, MapPin, Users } from "lucide-react";
 
-import { getHotel, getHotelAmenities, getHotelRoomTypes } from '@/actions';
-import { StaticMap, Tag } from '@/components';
-import countries from '@/data/countries.json';
+import { getHotel, getHotelAmenities, getHotelRoomTypes } from "@/actions";
+import { StaticMap, Tag } from "@/components";
+import countries from "@/data/countries.json";
+import { isDay } from "@/lib/dates";
 
-import { BookingPanel } from './ui/BookingPanel';
+import { BookingPanel } from "./ui/BookingPanel";
 
 const countryName = (code: string) =>
   countries.find((country) => country.code === code)?.name ?? code;
 
 const money = (cents: number, currency: string) =>
-  new Intl.NumberFormat('en-GB', {
-    style: 'currency',
+  new Intl.NumberFormat("en-GB", {
+    style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(cents / 100);
 
+const requestedStay = (params: Record<string, string | undefined>) => {
+  const { checkIn, checkOut, guests } = params;
+
+  if (!isDay(checkIn) || !isDay(checkOut) || checkOut <= checkIn) {
+    return undefined;
+  }
+
+  return { checkIn, checkOut, guests: Math.min(Number(guests) || 2, 10) };
+};
+
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
 }
 
-export default async function HotelDetailPage({ params }: Props) {
+export default async function HotelDetailPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const stay = requestedStay(await searchParams);
   const hotel = await getHotel(id);
 
   if (!hotel) {
@@ -59,16 +72,20 @@ export default async function HotelDetailPage({ params }: Props) {
         <h1 className="mt-1 text-4xl">{hotel.name}</h1>
 
         <p className="mt-2 flex items-center gap-1.5 text-sm text-muted">
-          <MapPin size={14} strokeWidth={1.5} className="flex-none text-accent" />
+          <MapPin
+            size={14}
+            strokeWidth={1.5}
+            className="flex-none text-accent"
+          />
           {hotel.address}, {hotel.city}
         </p>
 
         {cheapest !== null && (
           <p className="mt-4 text-sm text-muted">
-            From{' '}
+            From{" "}
             <span className="font-heading text-2xl text-accent-ink">
               {money(cheapest, roomTypes[0].currency)}
-            </span>{' '}
+            </span>{" "}
             per night
           </p>
         )}
@@ -131,7 +148,7 @@ export default async function HotelDetailPage({ params }: Props) {
         </div>
 
         <aside className="flex flex-col gap-8">
-          <BookingPanel hotelId={hotel.id} />
+          <BookingPanel hotelId={hotel.id} stay={stay} />
 
           {coords && (
             <section>

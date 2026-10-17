@@ -1,43 +1,38 @@
-'use client';
+"use client";
 
-import { useState, useTransition } from 'react';
-import Link from 'next/link';
-import { CalendarCheck, Users } from 'lucide-react';
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { CalendarCheck, Users } from "lucide-react";
 
-import { checkAvailability, createBooking } from '@/actions';
-import { Stepper } from '@/components';
-import type { Booking, RoomAvailability } from '@/interfaces';
+import { checkAvailability, createBooking } from "@/actions";
+import { Stepper } from "@/components";
+import type { Booking, RoomAvailability } from "@/interfaces";
+import { addDays, today } from "@/lib/dates";
 
 const MAX_ROOMS = 10;
 
 const money = (cents: number, currency: string) =>
-  new Intl.NumberFormat('en-GB', {
-    style: 'currency',
+  new Intl.NumberFormat("en-GB", {
+    style: "currency",
     currency,
     maximumFractionDigits: 0,
   }).format(cents / 100);
 
-const addDays = (value: string, days: number) => {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  date.setUTCDate(date.getUTCDate() + days);
-
-  return date.toISOString().slice(0, 10);
-};
-
-const today = () => new Date().toISOString().slice(0, 10);
-
 const field =
-  'w-full rounded border border-line bg-white/50 px-2.5 py-2 text-sm outline-none focus:border-accent';
+  "w-full rounded border border-line bg-white/50 px-2.5 py-2 text-sm outline-none focus:border-accent";
 
 interface Props {
   hotelId: string;
+  stay?: { checkIn: string; checkOut: string; guests: number };
 }
 
-export const BookingPanel = ({ hotelId }: Props) => {
-  const [checkIn, setCheckIn] = useState(addDays(today(), 14));
-  const [checkOut, setCheckOut] = useState(addDays(today(), 16));
+export const BookingPanel = ({ hotelId, stay }: Props) => {
+  const [checkIn, setCheckIn] = useState(stay?.checkIn ?? addDays(today(), 14));
+  const [checkOut, setCheckOut] = useState(
+    stay?.checkOut ?? addDays(today(), 16),
+  );
   const [rooms, setRooms] = useState(1);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(stay?.guests ?? 2);
 
   const [results, setResults] = useState<RoomAvailability[] | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -57,7 +52,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
     setBooking(null);
 
     if (checkOut <= checkIn) {
-      setError('Check-out must be after check-in');
+      setError("Check-out must be after check-in");
       return;
     }
 
@@ -140,7 +135,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
         disabled={pending}
         className="mt-3 w-full rounded bg-accent px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {pending ? 'Checking…' : 'Check availability'}
+        {pending ? "Checking…" : "Check availability"}
       </button>
 
       {error && (
@@ -148,7 +143,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
           {error}
           {needsLogin && (
             <>
-              {' '}
+              {" "}
               <Link href="/auth/login" className="text-accent underline">
                 Sign in
               </Link>
@@ -162,7 +157,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
           <p className="flex items-center gap-1.5 font-medium text-accent-ink">
             <CalendarCheck size={14} strokeWidth={1.5} />
             {booking.units === 1
-              ? 'Room held for you'
+              ? "Room held for you"
               : `${booking.units} rooms held for you`}
           </p>
           <p className="mt-1 text-muted">
@@ -182,8 +177,8 @@ export const BookingPanel = ({ hotelId }: Props) => {
         <ul className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
           {results.length === 0 && (
             <li className="text-sm text-faint">
-              No room type fits {guests} {guests === 1 ? 'guest' : 'guests'} in{' '}
-              {rooms} {rooms === 1 ? 'room' : 'rooms'} on those dates.
+              No room type fits {guests} {guests === 1 ? "guest" : "guests"} in{" "}
+              {rooms} {rooms === 1 ? "room" : "rooms"} on those dates.
             </li>
           )}
 
@@ -209,7 +204,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
                       {enough
                         ? `${room.unitsLeft} left`
                         : room.unitsLeft === 0
-                          ? 'Sold out'
+                          ? "Sold out"
                           : `only ${room.unitsLeft} left`}
                     </span>
                   </p>
@@ -218,7 +213,7 @@ export const BookingPanel = ({ hotelId }: Props) => {
                 <span className="font-heading text-lg text-accent-ink">
                   {money(room.totalPrice, room.currency)}
                   <span className="ml-1 text-xs font-normal text-faint">
-                    / {room.nights} {room.nights === 1 ? 'night' : 'nights'}
+                    / {room.nights} {room.nights === 1 ? "night" : "nights"}
                   </span>
                 </span>
 

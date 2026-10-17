@@ -1,21 +1,22 @@
-import Link from 'next/link';
-import { MapPin, Navigation, Users } from 'lucide-react';
+import Link from "next/link";
+import { MapPin, Navigation, Users } from "lucide-react";
 
-import type { SearchHotel } from '@/interfaces';
+import type { SearchHotel } from "@/interfaces";
 
 interface Props {
   hotel: SearchHotel;
+  stay?: string;
 }
 
 const price = (cents: number | null) =>
   cents === null ? null : Math.round(cents / 100);
 
-export const HotelCard = ({ hotel }: Props) => {
+export const HotelCard = ({ hotel, stay }: Props) => {
   const from = price(hotel.priceFrom);
 
   return (
     <Link
-      href={`/hotels/${hotel.id}`}
+      href={`/hotels/${hotel.id}${stay ? `?${stay}` : ""}`}
       className="group flex flex-col overflow-hidden rounded border border-line transition-colors hover:border-accent"
     >
       <div className="relative grid h-36 place-items-center bg-accent-tint">
