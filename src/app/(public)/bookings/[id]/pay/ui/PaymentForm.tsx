@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -14,8 +14,6 @@ import { CalendarCheck } from 'lucide-react';
 
 import { getBookingStatus } from '@/actions';
 
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 const POLL_ATTEMPTS = 20;
 const POLL_INTERVAL = 1000;
@@ -50,13 +48,23 @@ interface Props {
   clientSecret: string;
   amountCents: number;
   currency: string;
+  publishableKey: string;
 }
 
-export const PaymentForm = ({ clientSecret, ...rest }: Props) => {
+export const PaymentForm = ({
+  clientSecret,
+  publishableKey,
+  ...rest
+}: Props) => {
+  const stripePromise = useMemo(
+    () => (publishableKey ? loadStripe(publishableKey) : null),
+    [publishableKey],
+  );
+
   if (!stripePromise) {
     return (
       <p className="rounded border border-line bg-white/50 px-3 py-2 text-sm text-muted">
-        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set.
+        STRIPE_PUBLISHABLE_KEY is not set.
       </p>
     );
   }
@@ -75,7 +83,7 @@ const Form = ({
   bookingId,
   amountCents,
   currency,
-}: Omit<Props, 'clientSecret'>) => {
+}: Omit<Props, 'clientSecret' | 'publishableKey'>) => {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();

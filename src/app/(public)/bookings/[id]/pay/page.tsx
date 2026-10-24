@@ -93,6 +93,7 @@ export default async function PayPage({ params }: Props) {
             clientSecret={intent.payment.clientSecret}
             amountCents={intent.payment.amountCents}
             currency={intent.payment.currency}
+            publishableKey={process.env.STRIPE_PUBLISHABLE_KEY ?? ''}
           />
         )}
       </div>

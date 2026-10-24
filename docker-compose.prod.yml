@@ -1,0 +1,26 @@
+name: stays-web
+
+services:
+
+  stays-web:
+    image: ghcr.io/joel-uzcategui/stays-web:${WEB_TAG}
+    container_name: stays-web
+    restart: unless-stopped
+    networks: [stays, traefik-net]
+    environment:
+      API_URL: http://api-gateway:3000/api
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-net
+      - traefik.http.routers.stays-web.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.stays-web.entrypoints=https
+      - traefik.http.routers.stays-web.tls.certresolver=letsEncrypt
+      - traefik.http.routers.stays-web.priority=1
+      - traefik.http.services.stays-web.loadbalancer.server.port=3000
+
+networks:
+  stays:
+    external: true
+  traefik-net:
+    external: true
