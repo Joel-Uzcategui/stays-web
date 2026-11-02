@@ -8,6 +8,7 @@ export interface SearchHotel {
   country: string;
   location: { lat: number; lon: number } | null;
   amenityCodes: string[];
+  coverPhotoId: string | null;
   priceFrom: number | null;
   maxCapacity: number | null;
   roomTypeCount: number;

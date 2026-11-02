@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Navigation, Users } from "lucide-react";
 
 import type { SearchHotel } from "@/interfaces";
+import { photoUrl } from "@/lib/photos";
 
 interface Props {
   hotel: SearchHotel;
@@ -19,10 +21,20 @@ export const HotelCard = ({ hotel, stay }: Props) => {
       href={`/hotels/${hotel.id}${stay ? `?${stay}` : ""}`}
       className="group flex flex-col overflow-hidden rounded border border-line transition-colors hover:border-accent"
     >
-      <div className="relative grid h-36 place-items-center bg-accent-tint">
-        <span className="font-heading text-5xl text-accent/35">
-          {hotel.name.charAt(0)}
-        </span>
+      <div className="relative grid h-36 place-items-center overflow-hidden bg-accent-tint">
+        {hotel.coverPhotoId ? (
+          <Image
+            src={photoUrl(hotel.coverPhotoId)}
+            alt={hotel.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <span className="font-heading text-5xl text-accent/35">
+            {hotel.name.charAt(0)}
+          </span>
+        )}
 
         {hotel.distanceKm !== null && (
           <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-xs text-accent-ink">
