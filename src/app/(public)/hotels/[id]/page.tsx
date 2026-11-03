@@ -7,12 +7,14 @@ import {
   getHotel,
   getHotelAmenities,
   getHotelRoomTypes,
+  getPublicHotelPhotos,
 } from "@/actions";
 import { StaticMap, Tag } from "@/components";
 import countries from "@/data/countries.json";
 import { addDays, isDay, today } from "@/lib/dates";
 
 import { BookingPanel } from "./ui/BookingPanel";
+import { HotelGallery } from "./ui/HotelGallery";
 
 const countryName = (code: string) =>
   countries.find((country) => country.code === code)?.name ?? code;
@@ -53,10 +55,11 @@ export default async function HotelDetailPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const [roomTypes, amenities, availableRooms] = await Promise.all([
+  const [roomTypes, amenities, availableRooms, photos] = await Promise.all([
     getHotelRoomTypes(id),
     getHotelAmenities(id),
     checkAvailability({ hotelId: id, ...stay, rooms: 1 }),
+    getPublicHotelPhotos(id),
   ]);
 
   const coords =
@@ -101,6 +104,8 @@ export default async function HotelDetailPage({ params, searchParams }: Props) {
           </p>
         )}
       </header>
+
+      <HotelGallery ids={photos.map((photo) => photo.id)} name={hotel.name} />
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_20rem]">
         <div className="min-w-0">

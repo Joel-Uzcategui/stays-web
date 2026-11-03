@@ -13,6 +13,12 @@ export * from './hotels/get-admin-hotel';
 export * from './hotels/create-update-hotel';
 export * from './hotels/set-hotel-active';
 
+export * from './photos/get-hotel-photos';
+export * from './photos/get-public-hotel-photos';
+export * from './photos/upload-hotel-photo';
+export * from './photos/delete-hotel-photo';
+export * from './photos/reorder-hotel-photos';
+
 export * from './room-types/get-hotel-room-types';
 export * from './room-types/get-admin-room-types';
 export * from './room-types/get-admin-room-type';
